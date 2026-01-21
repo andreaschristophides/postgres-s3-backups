@@ -17,26 +17,33 @@ bucket_exists() {
 }
 
 create_bucket() {
-    echo "Bucket $S3_BUCKET_NAME doesn't exist. Creating it now..."
+  echo "Bucket $S3_BUCKET_NAME doesn't exist. Creating it now..."
 
-    # create bucket
-    s3api create-bucket \
-        --create-bucket-configuration LocationConstraint="$AWS_REGION" \
-        --object-ownership BucketOwnerEnforced
+  # create bucket (Frankfurt requires LocationConstraint)
+  aws s3api create-bucket \
+    --bucket "$S3_BUCKET_NAME" \
+    --region "$AWS_REGION" \
+    --create-bucket-configuration LocationConstraint="$AWS_REGION" \
+    --object-ownership BucketOwnerEnforced
 
-    # block public access
-    s3api put-public-access-block \
-        --public-access-block-configuration \
-        "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+  # block public access
+  aws s3api put-public-access-block \
+    --bucket "$S3_BUCKET_NAME" \
+    --public-access-block-configuration \
+      BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 
-    # enable versioning for objects in the bucket 
-    s3api put-bucket-versioning --versioning-configuration Status=Enabled
+  # enable versioning
+  aws s3api put-bucket-versioning \
+    --bucket "$S3_BUCKET_NAME" \
+    --versioning-configuration Status=Enabled
 
-    # encrypt objects in the bucket
-    s3api put-bucket-encryption \
-      --server-side-encryption-configuration \
-      '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
+  # enable encryption (AES256)
+  aws s3api put-bucket-encryption \
+    --bucket "$S3_BUCKET_NAME" \
+    --server-side-encryption-configuration \
+      '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
 }
+
 
 ensure_bucket_exists() {
     if bucket_exists; then
