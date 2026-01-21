@@ -19,30 +19,25 @@ bucket_exists() {
 create_bucket() {
   echo "Bucket $S3_BUCKET_NAME doesn't exist. Creating it now..."
 
-  # create bucket (Frankfurt requires LocationConstraint)
   aws s3api create-bucket \
     --bucket "$S3_BUCKET_NAME" \
     --region "$AWS_REGION" \
     --create-bucket-configuration LocationConstraint="$AWS_REGION" \
     --object-ownership BucketOwnerEnforced
 
-  # block public access
   aws s3api put-public-access-block \
     --bucket "$S3_BUCKET_NAME" \
-    --public-access-block-configuration \
-      BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+    --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
 
-  # enable versioning
   aws s3api put-bucket-versioning \
     --bucket "$S3_BUCKET_NAME" \
     --versioning-configuration Status=Enabled
 
-  # enable encryption (AES256)
   aws s3api put-bucket-encryption \
     --bucket "$S3_BUCKET_NAME" \
-    --server-side-encryption-configuration \
-      '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+    --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
 }
+
 
 
 ensure_bucket_exists() {
